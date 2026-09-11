@@ -82,4 +82,5 @@
 
 &trackpad_split {
     device = <&tps43_trackpad>;
+    input-processors = <&zip_temp_layer 4 500>;
 };
