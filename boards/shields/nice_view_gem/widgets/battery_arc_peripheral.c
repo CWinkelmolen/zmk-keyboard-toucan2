@@ -44,12 +44,19 @@ static void draw_battery_arc_peripheral(lv_obj_t *canvas, const lv_point_t *dots
 
 static void draw_battery_labels_peripheral(lv_obj_t *canvas, uint8_t level)
 {
+    // ZMK reports level 0 when the right half disconnects (and before it first connects)
+    bool connected = level > 0;
+
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &quinquefive_12, LV_TEXT_ALIGN_CENTER);
     lv_canvas_draw_text(canvas, 81, 31, 56, &label_dsc, "R");
 
     char buf[8];
-    snprintf(buf, sizeof(buf), "%d", level);
+    if (connected) {
+        snprintf(buf, sizeof(buf), "%d", level);
+    } else {
+        snprintf(buf, sizeof(buf), "--");
+    }
     lv_draw_label_dsc_t label_dsc_txt;
     init_label_dsc(&label_dsc_txt, LVGL_FOREGROUND, &quinquefive_8, LV_TEXT_ALIGN_CENTER);
     lv_canvas_draw_text(canvas, 81, 45, 56, &label_dsc_txt, buf);
@@ -57,8 +64,6 @@ static void draw_battery_labels_peripheral(lv_obj_t *canvas, uint8_t level)
 
 void draw_battery_peripheral_status(lv_obj_t *canvas, const struct status_state *state) {
     uint8_t level = state->battery_p;
-    if (level > 0) {
-        draw_battery_arc_peripheral(canvas, bat_dots_peripheral, level, true);
-        draw_battery_labels_peripheral(canvas, level);
-    }
+    draw_battery_arc_peripheral(canvas, bat_dots_peripheral, level, true);
+    draw_battery_labels_peripheral(canvas, level);
 }

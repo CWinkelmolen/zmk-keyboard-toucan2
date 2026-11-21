@@ -26,6 +26,8 @@ struct status_state {
     bool active_profile_bonded;
     uint8_t layer_index;
     const char *layer_label;
+    uint8_t mods;      // active modifiers, bit 0..3 = CTRL, SHIFT, ALT, GUI (left + right combined)
+    bool caps_lock;    // Caps Lock LED state as reported by the host
 #else
     bool connected;
 #endif
