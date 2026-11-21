@@ -5,8 +5,8 @@
  * for a portrait screen:
  *
  *   +----------------------------+
- *   | [USB]v [BT]2v     87% [##] |  output: USB / Bluetooth + profile + status mark
- *   | ====               64% [# ] |  batteries: left half, right half
+ *   | [BT]2v            87% [##] |  output: USB or Bluetooth (+ profile) + status mark
+ *   |                   64% [# ] |  batteries: left half, right half
  *   |          Bongo Cat         |
  *   | BASE                       |  layer name
  *   | CAPS                       |  Caps Lock (only when on)
@@ -52,11 +52,8 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 /* Layout */
 #define OUT_Y           2
-#define USB_X           2
-#define BT_X            38
+#define OUT_X           2
 #define ICON_W          18      // USB / Bluetooth icon: 18x28
-#define ICON_H          28
-#define SELECT_LINE_Y   (OUT_Y + ICON_H + 2)
 
 #define BAT_ICON_X      (SCREEN_WIDTH - 12)
 #define BAT_ROW_Y(i)    (OUT_Y + (i) * 18)
@@ -157,30 +154,32 @@ static void draw_pattern(lv_obj_t *canvas, int x, int y, const char *const *rows
 }
 
 /**
- * Output: [USB][mark]  [BT][profile][mark], with a line under the selected one
+ * Output: only the active one is shown
+ *   USB:       [USB][mark]           mark = ok when the computer is using the keyboard
+ *   Bluetooth: [BT][profile][mark]   mark = ok connected / x paired but not connected /
+ *                                           <> empty profile, ready to pair
  **/
 
 static void draw_output(lv_obj_t *canvas, const struct status_state *state) {
-    // USB
-    draw_img(canvas, USB_X, OUT_Y, &sym_usb_2x);
-    draw_img(canvas, USB_X + ICON_W + 2, OUT_Y + 16, state->usb_hid_ready ? &sym_ok_2x : &sym_nok_2x);
+    if (state->selected_endpoint.transport == ZMK_TRANSPORT_USB) {
+        draw_img(canvas, OUT_X, OUT_Y, &sym_usb_2x);
+        draw_img(canvas, OUT_X + ICON_W + 2, OUT_Y + 16,
+                 state->usb_hid_ready ? &sym_ok_2x : &sym_nok_2x);
+        return;
+    }
 
     // Bluetooth, blinking while searching for / waiting on the host
     if (state->active_profile_connected || !state->conn_blink_off) {
-        draw_img(canvas, BT_X, OUT_Y, &sym_bt_2x);
+        draw_img(canvas, OUT_X, OUT_Y, &sym_bt_2x);
     }
     if (state->active_profile_index >= 0 &&
         state->active_profile_index < ARRAY_SIZE(profile_digits)) {
-        draw_img(canvas, BT_X + ICON_W + 2, OUT_Y, profile_digits[state->active_profile_index]);
+        draw_img(canvas, OUT_X + ICON_W + 2, OUT_Y, profile_digits[state->active_profile_index]);
     }
     const lv_img_dsc_t *bt_mark = state->active_profile_connected ? &sym_ok_2x
                                   : state->active_profile_bonded  ? &sym_nok_2x
                                                                   : &sym_open_2x;
-    draw_img(canvas, BT_X + ICON_W + 2, OUT_Y + 16, bt_mark);
-
-    // Selection line under the active output
-    int line_x = state->selected_endpoint.transport == ZMK_TRANSPORT_USB ? USB_X : BT_X;
-    draw_box(canvas, line_x, SELECT_LINE_Y, ICON_W + 12, 2, LVGL_FOREGROUND);
+    draw_img(canvas, OUT_X + ICON_W + 2, OUT_Y + 16, bt_mark);
 }
 
 /**
@@ -374,7 +373,9 @@ static void output_update_cb(struct output_state state) {
         widget->state.active_profile_bonded = state.active_profile_bonded;
         widget->state.usb_hid_ready = state.usb_hid_ready;
 
-        if (state.active_profile_connected) {
+        // Only blink while Bluetooth is the active output and has no connection
+        if (state.selected_endpoint.transport != ZMK_TRANSPORT_BLE ||
+            state.active_profile_connected) {
             lv_timer_pause(widget->blink_timer);
             widget->state.conn_blink_off = false;
         } else {
