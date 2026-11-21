@@ -8,7 +8,6 @@
  * Extra status indicators for status screen style 2:
  *  - Modifier boxes (S C A G) in the top-left corner; active ones are drawn inverted
  *  - CAPS badge in the top-right corner (only when Caps Lock is on)
- *  - WPM value above the WPM chart
  *
  * quinquefive_8 glyphs are 8x9 px with a 10 px advance; the boxes leave 2 px around them.
  */
@@ -24,9 +23,6 @@
 
 #define CAPS_W          42
 #define CAPS_X          (SCREEN_WIDTH - 2 - CAPS_W)
-
-#define WPM_X           12
-#define WPM_Y           62      // row between the battery arcs and the WPM chart
 
 /* Bit order in state->mods: CTRL, SHIFT, ALT, GUI. Display order: S C A G. */
 static const struct {
@@ -54,12 +50,6 @@ static void draw_small_text(lv_obj_t *canvas, int x, int y, int w, lv_color_t co
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, color, &quinquefive_8, LV_TEXT_ALIGN_LEFT);
     lv_canvas_draw_text(canvas, x, y, w, &label_dsc, text);
-}
-
-void draw_wpm_value(lv_obj_t *canvas, const struct status_state *state) {
-    char buf[12];
-    snprintf(buf, sizeof(buf), "WPM %u", state->wpm);
-    draw_small_text(canvas, WPM_X, WPM_Y, 80, LVGL_FOREGROUND, buf);
 }
 
 void draw_mods_status(lv_obj_t *canvas, const struct status_state *state) {
