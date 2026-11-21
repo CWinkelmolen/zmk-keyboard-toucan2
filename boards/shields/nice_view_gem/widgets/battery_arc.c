@@ -57,7 +57,34 @@ static void draw_battery_labels(lv_obj_t *canvas, uint8_t level)
     lv_canvas_draw_text(canvas, 9, 45, 56, &label_dsc_txt, buf);
 }
 
+/* Small lightning bolt, 6x9 px, top-left corner at (x, y) */
+static void draw_charging_bolt(lv_obj_t *canvas, int x, int y)
+{
+    static const char *const bolt[] = {
+        "....##",
+        "...##.",
+        "..##..",
+        ".##...",
+        "######",
+        "...##.",
+        "..##..",
+        ".##...",
+        "##....",
+    };
+
+    for (int row = 0; row < ARRAY_SIZE(bolt); row++) {
+        for (int col = 0; bolt[row][col] != '\0'; col++) {
+            if (bolt[row][col] == '#') {
+                lv_canvas_set_px_color(canvas, x + col, y + row, LVGL_FOREGROUND);
+            }
+        }
+    }
+}
+
 void draw_battery_status(lv_obj_t *canvas, const struct status_state *state) {
     draw_battery_arc(canvas, bat_dots_left, state->battery, true);
     draw_battery_labels(canvas, state->battery);
+    if (state->charging) {
+        draw_charging_bolt(canvas, 47, 32);
+    }
 }

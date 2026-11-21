@@ -1,9 +1,15 @@
 if SHIELD_NICE_VIEW_GEM
 
 config TOUCAN_STATUS_SCREEN
-    int "Status screen style (0 to 2)"
-    default 2
-    range 0 2
+    int "Status screen style (0 to 3)"
+    default 3
+    range 0 3
+
+config TOUCAN_MAC_MODIFIERS
+    bool "Status screen style 3: show macOS modifier symbols (ctrl, option, command, shift)"
+    default y
+    help
+      Disable to show Windows symbols (win, alt, ctrl, shift) instead.
 
 config LV_Z_VDB_SIZE
     default 100
@@ -40,6 +46,8 @@ config NICE_VIEW_WIDGET_STATUS
     select LV_USE_ANIMIMG
     select LV_USE_ANIMATION
     select ZMK_WPM
+    select LV_FONT_UNSCII_16 if TOUCAN_STATUS_SCREEN = 3
+    select LV_FONT_UNSCII_8 if TOUCAN_STATUS_SCREEN = 3
 
 config NICE_VIEW_WIDGET_INVERTED
     bool "Invert display colors"

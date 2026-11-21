@@ -34,8 +34,13 @@ void draw_profile_status(lv_obj_t *canvas, const struct status_state *state) {
     for (int i = 0; i < BT_N_PROFILES; i++) {
         int dy = BT_DOT_START_Y + i * BT_DOT_SPACING;
 
-        if (i == state->active_profile_index) {
+        if (i == state->active_profile_index && state->active_profile_connected) {
             draw_filled_rect(canvas, BT_DOT_X, dy, BT_DOT_SIZE, BT_DOT_SIZE, fg);
+        } else if (i == state->active_profile_index) {
+            // Selected, but no host connected: hollow square with a dot in the middle
+            draw_outlined_rect(canvas, BT_DOT_X, dy, BT_DOT_SIZE, BT_DOT_SIZE,
+                               bg, fg, 1);
+            draw_filled_rect(canvas, BT_DOT_X + 2, dy + 2, BT_DOT_SIZE - 4, BT_DOT_SIZE - 4, fg);
         } else {
             draw_outlined_rect(canvas, BT_DOT_X, dy, BT_DOT_SIZE, BT_DOT_SIZE,
                                bg, fg, 1);

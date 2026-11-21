@@ -13,7 +13,7 @@
 
 void draw_layer_status(lv_obj_t *canvas, const struct status_state *state) {
     lv_draw_label_dsc_t label_dsc;
-    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &quinquefive_18, LV_TEXT_ALIGN_RIGHT);
+    init_label_dsc(&label_dsc, LVGL_FOREGROUND, &quinquefive_18, LV_TEXT_ALIGN_CENTER);
 
     char fallback_layer_name[16]; 
 
@@ -25,5 +25,6 @@ void draw_layer_status(lv_obj_t *canvas, const struct status_state *state) {
         layer_name = fallback_layer_name;
     }
 
-    lv_canvas_draw_text(canvas, -23, 115, SCREEN_WIDTH, &label_dsc, layer_name);
+    // Centered, between the Bongo Cat and the connection row
+    lv_canvas_draw_text(canvas, 0, 114, SCREEN_WIDTH, &label_dsc, layer_name);
 }

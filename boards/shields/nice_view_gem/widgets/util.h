@@ -26,6 +26,10 @@ struct status_state {
     bool active_profile_bonded;
     uint8_t layer_index;
     const char *layer_label;
+    uint8_t mods;      // active modifiers, bit 0..3 = CTRL, SHIFT, ALT, GUI (left + right combined)
+    bool caps_lock;    // Caps Lock LED state as reported by the host
+    bool conn_blink_off; // Bluetooth logo blink phase while not connected
+    bool usb_hid_ready;  // USB host has enumerated the keyboard (style 3)
 #else
     bool connected;
 #endif
