@@ -422,7 +422,7 @@ int zmk_widget_screen_init(struct zmk_widget_screen *widget, lv_obj_t *parent) {
 
 #if defined(CONFIG_TOUCAN_STATUS_SCREEN) && CONFIG_TOUCAN_STATUS_SCREEN == 2
     // Created after the canvas so it is drawn on top of it
-    widget->cat = bongo_cat_create(widget->obj);
+    widget->cat = bongo_cat_create(widget->obj, 22, 58);
     widget->blink_timer = lv_timer_create(blink_timer_cb, BLINK_INTERVAL_MS, widget);
     lv_timer_pause(widget->blink_timer);
 #endif

@@ -105,9 +105,9 @@ void bongo_cat_set_hidden(lv_obj_t *cat, bool hidden) {
     }
 }
 
-lv_obj_t *bongo_cat_create(lv_obj_t *parent) {
+lv_obj_t *bongo_cat_create(lv_obj_t *parent, lv_coord_t x, lv_coord_t y) {
     lv_obj_t *cat = lv_animimg_create(parent);
-    lv_obj_set_pos(cat, BONGO_CAT_X, BONGO_CAT_Y);
+    lv_obj_set_pos(cat, x, y);
     lv_img_set_src(cat, &bongo_cat_both1_open);
     current_anim = ANIM_NONE;
     bongo_cat_set_wpm(cat, 0);
