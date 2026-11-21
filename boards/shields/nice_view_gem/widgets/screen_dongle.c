@@ -8,9 +8,9 @@
  *   | [BT]2v            87% [##] |  output: USB or Bluetooth (+ profile) + status mark
  *   |                   64% [# ] |  batteries: left half, right half
  *   |          Bongo Cat         |
- *   | BASE                       |  layer name
+ *   | BASE                42 WPM |  layer name, typing speed
  *   | CAPS                       |  Caps Lock (only when on)
- *   |   ^    opt   cmd   shift   |  modifiers, underlined while held
+ *   |   ^    opt   cmd   shift   |  modifiers, inverted while held
  *   +----------------------------+
  *
  * The Bluetooth logo blinks while the active profile has no connection.
@@ -66,7 +66,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define CAPS_Y          112
 
 #define MOD_ICON_W      28
-#define MOD_GAP         4
+#define MOD_GAP         6
 #define MOD_Y           134
 #define MOD_X(i)        ((SCREEN_WIDTH - (4 * MOD_ICON_W + 3 * MOD_GAP)) / 2 + (i) * (MOD_ICON_W + MOD_GAP))
 
@@ -88,6 +88,12 @@ LV_IMG_DECLARE(alt_icon_2x);
 LV_IMG_DECLARE(win_icon_2x);
 LV_IMG_DECLARE(cmd_icon_2x);
 LV_IMG_DECLARE(opt_icon_2x);
+LV_IMG_DECLARE(control_icon_2x_inv);
+LV_IMG_DECLARE(shift_icon_2x_inv);
+LV_IMG_DECLARE(alt_icon_2x_inv);
+LV_IMG_DECLARE(win_icon_2x_inv);
+LV_IMG_DECLARE(cmd_icon_2x_inv);
+LV_IMG_DECLARE(opt_icon_2x_inv);
 
 static const lv_img_dsc_t *const profile_digits[] = {
     &sym_1_2x, &sym_2_2x, &sym_3_2x, &sym_4_2x, &sym_5_2x,
@@ -96,17 +102,18 @@ static const lv_img_dsc_t *const profile_digits[] = {
 static const struct {
     uint8_t mods;
     const lv_img_dsc_t *icon;
+    const lv_img_dsc_t *icon_active;
 } modifier_symbols[] = {
 #if IS_ENABLED(CONFIG_TOUCAN_MAC_MODIFIERS)
-    {MOD_LCTL | MOD_RCTL, &control_icon_2x},
-    {MOD_LALT | MOD_RALT, &opt_icon_2x},
-    {MOD_LGUI | MOD_RGUI, &cmd_icon_2x},
-    {MOD_LSFT | MOD_RSFT, &shift_icon_2x},
+    {MOD_LCTL | MOD_RCTL, &control_icon_2x, &control_icon_2x_inv},
+    {MOD_LALT | MOD_RALT, &opt_icon_2x, &opt_icon_2x_inv},
+    {MOD_LGUI | MOD_RGUI, &cmd_icon_2x, &cmd_icon_2x_inv},
+    {MOD_LSFT | MOD_RSFT, &shift_icon_2x, &shift_icon_2x_inv},
 #else
-    {MOD_LGUI | MOD_RGUI, &win_icon_2x},
-    {MOD_LALT | MOD_RALT, &alt_icon_2x},
-    {MOD_LCTL | MOD_RCTL, &control_icon_2x},
-    {MOD_LSFT | MOD_RSFT, &shift_icon_2x},
+    {MOD_LGUI | MOD_RGUI, &win_icon_2x, &win_icon_2x_inv},
+    {MOD_LALT | MOD_RALT, &alt_icon_2x, &alt_icon_2x_inv},
+    {MOD_LCTL | MOD_RCTL, &control_icon_2x, &control_icon_2x_inv},
+    {MOD_LSFT | MOD_RSFT, &shift_icon_2x, &shift_icon_2x_inv},
 #endif
 };
 
@@ -246,22 +253,39 @@ static void draw_layer(lv_obj_t *canvas, const struct status_state *state) {
     }
     draw_label(canvas, LAYER_X, LAYER_Y, SCREEN_WIDTH - LAYER_X, LV_TEXT_ALIGN_LEFT, name);
 
+    // Small WPM counter, right-aligned on the layer row (bottom-aligned with the layer name)
+    char wpm[12];
+    snprintf(wpm, sizeof(wpm), "%u WPM", state->wpm);
+    lv_draw_label_dsc_t dsc;
+    lv_draw_label_dsc_init(&dsc);
+    dsc.color = LVGL_FOREGROUND;
+    dsc.font = &lv_font_unscii_8;
+    dsc.align = LV_TEXT_ALIGN_RIGHT;
+    lv_canvas_draw_text(canvas, 0, LAYER_Y + 8, SCREEN_WIDTH - 4, &dsc, wpm);
+
     if (state->caps_lock) {
         draw_label(canvas, LAYER_X, CAPS_Y, SCREEN_WIDTH - LAYER_X, LV_TEXT_ALIGN_LEFT, "CAPS");
     }
 }
 
 /**
- * Modifiers: active ones move up 2 px and get a line underneath
+ * Modifiers: held ones are shown inverted (black symbol on a white rounded square)
  **/
 
 static void draw_modifiers(lv_obj_t *canvas, const struct status_state *state) {
     for (int i = 0; i < ARRAY_SIZE(modifier_symbols); i++) {
         bool active = (state->mods & modifier_symbols[i].mods) != 0;
         int x = MOD_X(i);
-        draw_img(canvas, x, active ? MOD_Y - 2 : MOD_Y, modifier_symbols[i].icon);
         if (active) {
-            draw_box(canvas, x + 2, MOD_Y + MOD_ICON_W - 2, MOD_ICON_W - 4, 2, LVGL_FOREGROUND);
+            lv_draw_rect_dsc_t dsc;
+            lv_draw_rect_dsc_init(&dsc);
+            dsc.bg_color = LVGL_FOREGROUND;
+            dsc.bg_opa = LV_OPA_COVER;
+            dsc.radius = 4;
+            lv_canvas_draw_rect(canvas, x - 2, MOD_Y - 2, MOD_ICON_W + 4, MOD_ICON_W + 4, &dsc);
+            draw_img(canvas, x, MOD_Y, modifier_symbols[i].icon_active);
+        } else {
+            draw_img(canvas, x, MOD_Y, modifier_symbols[i].icon);
         }
     }
 }
@@ -507,8 +531,11 @@ struct wpm_state {
 static void wpm_update_cb(struct wpm_state state) {
     struct zmk_widget_screen *widget;
     FOR_EACH_WIDGET(widget) {
-        widget->state.wpm = state.wpm;
         bongo_cat_set_wpm(widget->cat, state.wpm);
+        if (widget->state.wpm != state.wpm) {
+            widget->state.wpm = state.wpm;
+            draw_screen(widget);
+        }
     }
 }
 

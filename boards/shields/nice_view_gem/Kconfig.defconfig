@@ -47,6 +47,7 @@ config NICE_VIEW_WIDGET_STATUS
     select LV_USE_ANIMATION
     select ZMK_WPM
     select LV_FONT_UNSCII_16 if TOUCAN_STATUS_SCREEN = 3
+    select LV_FONT_UNSCII_8 if TOUCAN_STATUS_SCREEN = 3
 
 config NICE_VIEW_WIDGET_INVERTED
     bool "Invert display colors"
