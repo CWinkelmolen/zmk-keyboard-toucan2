@@ -5,10 +5,11 @@
  * for a portrait screen:
  *
  *   +----------------------------+
- *   | [BT]2v            87% [##] |  output: USB or Bluetooth (+ profile) + status mark
- *   |                   64% [# ] |  batteries: left half, right half
+ *   | [BT]2v        L  87% [##] |  output: USB or Bluetooth (+ profile) + status mark
+ *   |               R  64% [# ] |  batteries: left half, right half
  *   |          Bongo Cat         |
- *   | BASE                42 WPM |  layer name, typing speed
+ *   | BASE                   42 |  layer name, typing speed
+ *   |                       WPM |
  *   | CAPS                       |  Caps Lock (only when on)
  *   |   ^    opt   cmd   shift   |  modifiers, inverted while held
  *   +----------------------------+
@@ -57,6 +58,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #define BAT_ICON_X      (SCREEN_WIDTH - 12)
 #define BAT_ROW_Y(i)    (OUT_Y + (i) * 18)
+#define BAT_SIDE_X      38      // "L" / "R" in front of the percentages
 
 #define CAT_X           42
 #define CAT_Y           40
@@ -64,6 +66,10 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define LAYER_X         4
 #define LAYER_Y         92
 #define CAPS_Y          112
+
+#define WPM_W           56
+#define WPM_X           (SCREEN_WIDTH - 2 - WPM_W)
+#define WPM_Y           90
 
 #define MOD_ICON_W      28
 #define MOD_GAP         6
@@ -221,8 +227,8 @@ static void draw_battery_icon(lv_obj_t *canvas, int x, int y, uint8_t level, boo
     }
 }
 
-static void draw_battery_row(lv_obj_t *canvas, int row, uint8_t level, bool charging,
-                             bool connected) {
+static void draw_battery_row(lv_obj_t *canvas, int row, const char *side, uint8_t level,
+                             bool charging, bool connected) {
     char buf[8];
     if (connected) {
         snprintf(buf, sizeof(buf), "%u%%", level);
@@ -230,14 +236,15 @@ static void draw_battery_row(lv_obj_t *canvas, int row, uint8_t level, bool char
         snprintf(buf, sizeof(buf), "--");
     }
     int y = BAT_ROW_Y(row);
+    draw_label(canvas, BAT_SIDE_X, y, 16, LV_TEXT_ALIGN_LEFT, side);
     draw_label(canvas, 0, y, BAT_ICON_X - 4, LV_TEXT_ALIGN_RIGHT, buf);
     draw_battery_icon(canvas, BAT_ICON_X, y, connected ? level : 0, charging);
 }
 
 static void draw_batteries(lv_obj_t *canvas, const struct status_state *state) {
-    draw_battery_row(canvas, 0, state->battery, state->charging, true);
+    draw_battery_row(canvas, 0, "L", state->battery, state->charging, true);
     // ZMK reports 0 for the right half while it is disconnected
-    draw_battery_row(canvas, 1, state->battery_p, false, state->battery_p > 0);
+    draw_battery_row(canvas, 1, "R", state->battery_p, false, state->battery_p > 0);
 }
 
 /**
@@ -253,15 +260,17 @@ static void draw_layer(lv_obj_t *canvas, const struct status_state *state) {
     }
     draw_label(canvas, LAYER_X, LAYER_Y, SCREEN_WIDTH - LAYER_X, LV_TEXT_ALIGN_LEFT, name);
 
-    // Small WPM counter, right-aligned on the layer row (bottom-aligned with the layer name)
-    char wpm[12];
-    snprintf(wpm, sizeof(wpm), "%u WPM", state->wpm);
+    // WPM counter on the right: number (large) with a small "WPM" underneath
+    char wpm[8];
+    snprintf(wpm, sizeof(wpm), "%u", state->wpm);
+    draw_label(canvas, WPM_X, WPM_Y, WPM_W, LV_TEXT_ALIGN_CENTER, wpm);
+
     lv_draw_label_dsc_t dsc;
     lv_draw_label_dsc_init(&dsc);
     dsc.color = LVGL_FOREGROUND;
     dsc.font = &lv_font_unscii_8;
-    dsc.align = LV_TEXT_ALIGN_RIGHT;
-    lv_canvas_draw_text(canvas, 0, LAYER_Y + 8, SCREEN_WIDTH - 4, &dsc, wpm);
+    dsc.align = LV_TEXT_ALIGN_CENTER;
+    lv_canvas_draw_text(canvas, WPM_X, WPM_Y + 18, WPM_W, &dsc, "WPM");
 
     if (state->caps_lock) {
         draw_label(canvas, LAYER_X, CAPS_Y, SCREEN_WIDTH - LAYER_X, LV_TEXT_ALIGN_LEFT, "CAPS");
