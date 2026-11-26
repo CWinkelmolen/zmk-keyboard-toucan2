@@ -19,6 +19,22 @@
 / {
     behaviors {
         /*
+         * LINKER DUIMTOETS
+         *
+         * Tik      = Option + Spatie
+         * Inhouden = Command + Spatie
+         */
+        spc_ht: space_hold_tap {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+
+            flavor = "tap-preferred";
+            tapping-term-ms = <200>;
+
+            bindings = <&kp>, <&kp>;
+        };
+
+        /*
          * LEFT HOME-ROW MODS
          *
          * A = Ctrl
@@ -128,7 +144,7 @@
                 &kp FSLH
                 &kp RSHFT
 
-                &kp LA(SPACE)
+                &spc_ht LG(SPACE) LA(SPACE)
                 &lt NUM SPACE
                 &kp TAB
                 &kp RET
